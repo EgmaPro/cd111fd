@@ -1,0 +1,231 @@
+-- Auto Car Hunter by Colin (Fixed Version)
+-- Устанавливаем название машины для поиска
+local TargetCarName = "Hyperluxe SS+"
+
+-- Получаем сервисы
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local localPlayer = Players.LocalPlayer
+
+-- Переменная для контроля процесса
+local Hunting = false
+
+-- Функция для создания простого интерфейса
+function CreateSimpleGUI()
+    -- Пытаемся удалить старый GUI, если он есть
+    pcall(function()
+        if game:GetService("CoreGui"):FindFirstChild("CarHunterGUI") then
+            game:GetService("CoreGui").CarHunterGUI:Destroy()
+        end
+    end)
+    
+    -- Создаем основной фрейм
+    local ScreenGui = Instance.new("ScreenGui")
+    local Frame = Instance.new("Frame")
+    local ToggleButton = Instance.new("TextButton")
+    local StatusLabel = Instance.new("TextLabel")
+    
+    ScreenGui.Name = "CarHunterGUI"
+    ScreenGui.Parent = game:GetService("CoreGui")
+    
+    Frame.Name = "MainFrame"
+    Frame.Parent = ScreenGui
+    Frame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    Frame.BorderSizePixel = 0
+    Frame.Position = UDim2.new(0.8, 0, 0.1, 0)
+    Frame.Size = UDim2.new(0, 200, 0, 100)
+    
+    ToggleButton.Name = "ToggleButton"
+    ToggleButton.Parent = Frame
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    ToggleButton.Size = UDim2.new(0, 180, 0, 40)
+    ToggleButton.Position = UDim2.new(0.05, 0, 0.1, 0)
+    ToggleButton.Font = Enum.Font.SourceSansBold
+    ToggleButton.Text = "START HUNTING"
+    ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleButton.TextSize = 16
+    
+    StatusLabel.Name = "StatusLabel"
+    StatusLabel.Parent = Frame
+    StatusLabel.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    StatusLabel.Size = UDim2.new(0, 180, 0, 40)
+    StatusLabel.Position = UDim2.new(0.05, 0, 0.55, 0)
+    StatusLabel.Font = Enum.Font.SourceSans
+    StatusLabel.Text = "Status: Ready"
+    StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    StatusLabel.TextSize = 14
+    
+    -- Обработчик клика по кнопке
+    ToggleButton.MouseButton1Click:Connect(function()
+        Hunting = not Hunting
+        if Hunting then
+            ToggleButton.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+            ToggleButton.Text = "STOP HUNTING"
+            StatusLabel.Text = "Status: Scanning..."
+            FindCarOnServer(TargetCarName)
+        else
+            ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+            ToggleButton.Text = "START HUNTING"
+            StatusLabel.Text = "Status: Stopped"
+        end
+    end)
+    
+    return StatusLabel
+end
+
+-- Основная функция поиска машины
+function FindCarOnServer(CarName)
+    if not Hunting then return end
+    
+    local CarFound = false
+    local TargetBooth = nil
+    
+    -- Ищем в Workspace.Map.PlayerBooths
+    local Map = workspace:FindFirstChild("Map")
+    if not Map then 
+        UpdateStatus("Error: No Map found!")
+        return 
+    end
+    
+    local PlayerBooths = Map:FindFirstChild("PlayerBooths")
+    if not PlayerBooths then 
+        UpdateStatus("Error: No PlayerBooths!")
+        return 
+    end
+    
+    UpdateStatus("Scanning "..#PlayerBooths:GetChildren().." booths...")
+    
+    -- Проходим по всем будкам
+    for _, BoothFolder in ipairs(PlayerBooths:GetChildren()) do
+        if not Hunting then break end
+        
+        local MainBooth = BoothFolder:FindFirstChild("PlayerBooth")
+        if MainBooth then
+            local SignText = MainBooth:FindFirstChild("SignText")
+            if SignText then
+                local SurfaceGui = SignText:FindFirstChild("SurfaceGui")
+                if SurfaceGui then
+                    local ScrollingFrame = SurfaceGui:FindFirstChild("ScrollingFrame")
+                    if ScrollingFrame then
+                        for _, ImageLabel in ipairs(ScrollingFrame:GetChildren()) do
+                            if ImageLabel:IsA("ImageLabel") then
+                                local Title = ImageLabel:FindFirstChild("Title")
+                                if Title then
+                                    local TextLabel = Title:FindFirstChild("TextLabel")
+                                    if TextLabel and string.upper(TextLabel.Text) == string.upper(CarName) then
+                                        CarFound = true
+                                        TargetBooth = MainBooth
+                                        UpdateStatus("FOUND: "..CarName)
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        if CarFound then break end
+    end
+    
+    -- Действия после поиска
+    if CarFound and TargetBooth then
+        -- Телепортируемся к машине
+        if localPlayer.Character then
+            localPlayer.Character:MoveTo(TargetBooth.Position + Vector3.new(0, 5, 0))
+            UpdateStatus("Teleported to car!")
+        end
+    else
+        -- Переходим на другой сервер
+        UpdateStatus("Car not found. Server hopping...")
+        wait(2)
+        ServerHop()
+    end
+end
+
+-- Функция смены сервера
+function ServerHop()
+    if not Hunting then return end
+    
+    UpdateStatus("Finding new server...")
+    local PlaceID = game.PlaceId
+    local AllIDs = {}
+    local foundAnything = ""
+    local actualHour = os.date("!*t").hour
+    
+    -- Читаем файл с посещенными серверами
+    local success, fileData = pcall(function()
+        return readfile("CarHunterServers.json")
+    end)
+    
+    if success and fileData then
+        AllIDs = HttpService:JSONDecode(fileData)
+    else
+        table.insert(AllIDs, tostring(actualHour))
+    end
+    
+    -- Функция для поиска подходящего сервера
+    local function TPReturner()
+        local Site
+        if foundAnything == "" then
+            Site = HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/'..PlaceID..'/servers/Public?sortOrder=Asc&limit=100'))
+        else
+            Site = HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/'..PlaceID..'/servers/Public?sortOrder=Asc&limit=100&cursor='..foundAnything))
+        end
+        
+        if Site.nextPageCursor and Site.nextPageCursor ~= "null" then
+            foundAnything = Site.nextPageCursor
+        end
+        
+        for _, v in pairs(Site.data) do
+            if not Hunting then break end
+            
+            local ID = tostring(v.id)
+            local Possible = true
+            
+            -- Проверяем, не были ли уже на этом сервере
+            for _, existingID in pairs(AllIDs) do
+                if ID == tostring(existingID) then
+                    Possible = false
+                    break
+                end
+            end
+            
+            if Possible and tonumber(v.playing) < tonumber(v.maxPlayers) then
+                table.insert(AllIDs, ID)
+                
+                -- Сохраняем историю серверов
+                pcall(function()
+                    writefile("CarHunterServers.json", HttpService:JSONEncode(AllIDs))
+                end)
+                
+                -- Телепортируемся
+                UpdateStatus("Teleporting to server "..ID)
+                TeleportService:TeleportToPlaceInstance(PlaceID, ID, localPlayer)
+                wait(5)
+                return
+            end
+        end
+    end
+    
+    -- Пытаемся найти сервер
+    TPReturner()
+    if foundAnything ~= "" then
+        TPReturner()
+    end
+end
+
+-- Функция обновления статуса
+function UpdateStatus(text)
+    if game:GetService("CoreGui"):FindFirstChild("CarHunterGUI") then
+        local StatusLabel = game:GetService("CoreGui").CarHunterGUI.MainFrame.StatusLabel
+        StatusLabel.Text = "Status: "..text
+    end
+end
+
+-- Создаем GUI и начинаем работу
+local StatusLabel = CreateSimpleGUI()
+UpdateStatus("Ready to hunt: "..TargetCarName)
+
+print("Auto Car Hunter loaded! Press the button to start.")
