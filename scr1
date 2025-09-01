@@ -1,349 +1,145 @@
--- Auto Car Hunter - Exact Path Version
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
-local localPlayer = Players.LocalPlayer
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({
+    Name = "ЧИТ ДЛЯ ХУЕСОСОВ",
+    LoadingTitle = "Загрузка читов...",
+    LoadingSubtitle = "by I.S.-1",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "IS1 Cheats",
+        FileName = "Config.json"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "noinvitelol",
+        RememberJoins = true
+    }
+})
 
-local Hunting = false
-local TargetCarName = ""
+Rayfield:Notify({
+    Title = "ЧИТ АКТИВИРОВАН",
+    Content = "Добро пожаловать в ад, уёбок",
+    Duration = 6.5,
+    Image = 4483362458,
+    Actions = {
+        Ignore = {
+            Name = "Похуй",
+            Callback = function()
+            end
+        }
+    }
+})
 
--- Создаем GUI
-function CreateGUI()
-    pcall(function()
-        if game:GetService("CoreGui"):FindFirstChild("CarHunterGUI") then
-            game:GetService("CoreGui").CarHunterGUI:Destroy()
-        end
-    end)
-    
-    local ScreenGui = Instance.new("ScreenGui")
-    local MainFrame = Instance.new("Frame")
-    local Title = Instance.new("TextLabel")
-    local InputFrame = Instance.new("Frame")
-    local CarInput = Instance.new("TextBox")
-    local SetButton = Instance.new("TextButton")
-    local ToggleButton = Instance.new("TextButton")
-    local StatusLabel = Instance.new("TextLabel")
-    local CloseButton = Instance.new("TextButton")
-    
-    ScreenGui.Name = "CarHunterGUI"
-    ScreenGui.Parent = game:GetService("CoreGui")
-    
-    MainFrame.Name = "MainFrame"
-    MainFrame.Parent = ScreenGui
-    MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Position = UDim2.new(0.7, 0, 0.2, 0)
-    MainFrame.Size = UDim2.new(0, 300, 0, 200)
-    MainFrame.Active = true
-    MainFrame.Draggable = true
-    
-    Title.Name = "Title"
-    Title.Parent = MainFrame
-    Title.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    Title.Size = UDim2.new(1, 0, 0, 30)
-    Title.Font = Enum.Font.SourceSansBold
-    Title.Text = "CAR HUNTER - EXACT PATH"
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 16
-    
-    InputFrame.Name = "InputFrame"
-    InputFrame.Parent = MainFrame
-    InputFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-    InputFrame.Position = UDim2.new(0.05, 0, 0.15, 0)
-    InputFrame.Size = UDim2.new(0.9, 0, 0, 40)
-    
-    CarInput.Name = "CarInput"
-    CarInput.Parent = InputFrame
-    CarInput.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-    CarInput.Position = UDim2.new(0.05, 0, 0.2, 0)
-    CarInput.Size = UDim2.new(0.6, 0, 0.6, 0)
-    CarInput.Font = Enum.Font.SourceSans
-    CarInput.PlaceholderText = "Enter car name..."
-    CarInput.Text = ""
-    CarInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-    CarInput.TextSize = 14
-    
-    SetButton.Name = "SetButton"
-    SetButton.Parent = InputFrame
-    SetButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-    SetButton.Position = UDim2.new(0.7, 0, 0.2, 0)
-    SetButton.Size = UDim2.new(0.25, 0, 0.6, 0)
-    SetButton.Font = Enum.Font.SourceSansBold
-    SetButton.Text = "SET"
-    SetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SetButton.TextSize = 14
-    
-    ToggleButton.Name = "ToggleButton"
-    ToggleButton.Parent = MainFrame
-    ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-    ToggleButton.Position = UDim2.new(0.05, 0, 0.35, 0)
-    ToggleButton.Size = UDim2.new(0.9, 0, 0, 35)
-    ToggleButton.Font = Enum.Font.SourceSansBold
-    ToggleButton.Text = "START HUNTING"
-    ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleButton.TextSize = 16
-    ToggleButton.Visible = false
-    
-    StatusLabel.Name = "StatusLabel"
-    StatusLabel.Parent = MainFrame
-    StatusLabel.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-    StatusLabel.Position = UDim2.new(0.05, 0, 0.55, 0)
-    StatusLabel.Size = UDim2.new(0.9, 0, 0, 60)
-    StatusLabel.Font = Enum.Font.SourceSans
-    StatusLabel.Text = "Enter car name and press SET"
-    StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    StatusLabel.TextSize = 14
-    StatusLabel.TextWrapped = true
-    
-    CloseButton.Name = "CloseButton"
-    CloseButton.Parent = MainFrame
-    CloseButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    CloseButton.Position = UDim2.new(0.9, -20, 0.02, 0)
-    CloseButton.Size = UDim2.new(0, 20, 0, 20)
-    CloseButton.Font = Enum.Font.SourceSansBold
-    CloseButton.Text = "X"
-    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    CloseButton.TextSize = 12
-    
-    SetButton.MouseButton1Click:Connect(function()
-        if CarInput.Text ~= "" then
-            TargetCarName = CarInput.Text
-            ToggleButton.Visible = true
-            UpdateStatus("Ready to hunt: "..TargetCarName)
-            CarInput.Text = ""
-        else
-            UpdateStatus("Please enter a car name!")
-        end
-    end)
-    
-    ToggleButton.MouseButton1Click:Connect(function()
-        Hunting = not Hunting
-        if Hunting then
-            ToggleButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-            ToggleButton.Text = "STOP HUNTING"
-            UpdateStatus("Hunting for: "..TargetCarName)
-            FindCarExactPath(TargetCarName)
-        else
-            ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-            ToggleButton.Text = "START HUNTING"
-            UpdateStatus("Stopped. Ready for: "..TargetCarName)
-        end
-    end)
-    
-    CloseButton.MouseButton1Click:Connect(function()
-        Hunting = false
-        ScreenGui:Destroy()
-    end)
-    
-    CarInput.FocusLost:Connect(function(enterPressed)
-        if enterPressed and CarInput.Text ~= "" then
-            TargetCarName = CarInput.Text
-            ToggleButton.Visible = true
-            UpdateStatus("Ready to hunt: "..TargetCarName)
-            CarInput.Text = ""
-        end
-    end)
-    
-    return StatusLabel
-end
+local MainTab = Window:CreateTab("Основное", 4483362458)
+local RehopSection = MainTab:CreateSection("Rehop функция")
 
--- Основная функция поиска по ТОЧНОМУ пути
-function FindCarExactPath(carName)
-    if not Hunting then return end
-    
-    UpdateStatus("Scanning exact path for: "..carName)
-    
-    -- Проверяем существование всех папок по пути
-    local Map = workspace:FindFirstChild("Map")
-    if not Map then
-        UpdateStatus("ERROR: No Map folder found!")
-        wait(2)
-        ServerHop()
-        return
-    end
-    
-    local PlayerBooths = Map:FindFirstChild("PlayerBooths")
-    if not PlayerBooths then
-        UpdateStatus("ERROR: No PlayerBooths folder found!")
-        wait(2)
-        ServerHop()
-        return
-    end
-    
-    local booths = PlayerBooths:GetChildren()
-    if #booths == 0 then
-        UpdateStatus("ERROR: No booths found in PlayerBooths!")
-        wait(2)
-        ServerHop()
-        return
-    end
-    
-    UpdateStatus("Found "..#booths.." booths. Scanning...")
-    
-    local carFound = false
-    local targetBooth = nil
-    
-    -- Проходим по всем PlayerBooth (PlayerBooth1, PlayerBooth2, ... PlayerBooth32)
-    for i, boothFolder in ipairs(booths) do
-        if not Hunting then break end
+local RehopButton = MainTab:CreateButton({
+    Name = "Rehop Server",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "НАЧИНАЕМ РЕХОП",
+            Content = "Ищем новый сервер, еблан...",
+            Duration = 3,
+            Image = 4483362458
+        })
         
-        if i % 5 == 0 then
-            UpdateStatus("Scanning booth "..i.."/"..#booths)
-        end
-        
-        -- Ищем основную часть PlayerBooth
-        local mainBooth = boothFolder:FindFirstChild("PlayerBooth")
-        if mainBooth then
-            -- Ищем SignText
-            local signText = mainBooth:FindFirstChild("SignText")
-            if signText then
-                -- Ищем SurfaceGui
-                local surfaceGui = signText:FindFirstChild("SurfaceGui")
-                if surfaceGui then
-                    -- Ищем ScrollingFrame
-                    local scrollingFrame = surfaceGui:FindFirstChild("ScrollingFrame")
-                    if scrollingFrame then
-                        -- Ищем все ImageLabel внутри ScrollingFrame
-                        for _, imageLabel in ipairs(scrollingFrame:GetChildren()) do
-                            if not Hunting then break end
-                            
-                            if imageLabel:IsA("ImageLabel") then
-                                -- Ищем Title внутри ImageLabel
-                                local title = imageLabel:FindFirstChild("Title")
-                                if title then
-                                    -- Ищем TextLabel внутри Title
-                                    local textLabel = title:FindFirstChild("TextLabel")
-                                    if textLabel and textLabel.Text then
-                                        -- Сравниваем текст с искомым названием
-                                        if string.upper(textLabel.Text) == string.upper(carName) then
-                                            carFound = true
-                                            targetBooth = mainBooth
-                                            UpdateStatus("FOUND: "..carName.." in booth "..i.."!")
-                                            break
-                                        end
-                                    end
+        -- ТВОЯ ФУНКЦИЯ РЕХОПА
+        local function StartRehop()
+            local PlaceID = game.PlaceId
+            local AllIDs = {}
+            local foundAnything = ""
+            local actualHour = os.date("!*t").hour
+            local Deleted = false
+            
+            local File = pcall(function()
+                AllIDs = game:GetService('HttpService'):JSONDecode(readfile("NotSameServers.json"))
+            end)
+            
+            if not File then
+                table.insert(AllIDs, actualHour)
+                writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+            end
+            
+            local function TPReturner()
+                local Site;
+                if foundAnything == "" then
+                    Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
+                else
+                    Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
+                end
+                
+                local ID = ""
+                if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
+                    foundAnything = Site.nextPageCursor
+                end
+                
+                local num = 0;
+                for i,v in pairs(Site.data) do
+                    local Possible = true
+                    ID = tostring(v.id)
+                    if tonumber(v.maxPlayers) > tonumber(v.playing) then
+                        for _,Existing in pairs(AllIDs) do
+                            if num ~= 0 then
+                                if ID == tostring(Existing) then
+                                    Possible = false
+                                end
+                            else
+                                if tonumber(actualHour) ~= tonumber(Existing) then
+                                    local delFile = pcall(function()
+                                        delfile("NotSameServers.json")
+                                        AllIDs = {}
+                                        table.insert(AllIDs, actualHour)
+                                    end)
                                 end
                             end
+                            num = num + 1
                         end
-                    else
-                        UpdateStatus("No ScrollingFrame in booth "..i)
+                        
+                        if Possible == true then
+                            table.insert(AllIDs, ID)
+                            wait()
+                            pcall(function()
+                                writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+                                wait()
+                                game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
+                            end)
+                            wait(4)
+                        end
                     end
-                else
-                    UpdateStatus("No SurfaceGui in booth "..i)
                 end
-            else
-                UpdateStatus("No SignText in booth "..i)
             end
-        else
-            UpdateStatus("No PlayerBooth in folder "..boothFolder.Name)
+            
+            local function Teleport()
+                while wait() do
+                    pcall(function()
+                        TPReturner()
+                        if foundAnything ~= "" then
+                            TPReturner()
+                        end
+                    end)
+                end
+            end
+            
+            Teleport()
         end
         
-        if carFound then break end
+        StartRehop()
     end
-    
-    if carFound and targetBooth then
-        -- Телепортируемся к найденной машине
-        if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            localPlayer.Character:MoveTo(targetBooth.Position + Vector3.new(0, 5, 0))
-            UpdateStatus("Teleported to "..carName.."!")
+})
+
+-- АВТОМАТИЧЕСКИЙ ПЕРЕЗАПУСК СКРИПТА ПОСЛЕ ТЕЛЕПОРТА
+game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(State)
+    if State == Enum.TeleportState.InProgress then
+        -- Сохраняем скрипт для авто-перезапуска
+        queue_on_teleport([[
             wait(5)
-        end
-    else
-        UpdateStatus(carName.." not found in any booth. Server hopping...")
-        wait(2)
-        ServerHop()
+            loadstring(game:HttpGet('https://raw.githubusercontent.com/IS1-Cheats/Roblox/main/cheat.lua'))()
+        ]])
     end
-end
+end)
 
--- Функция смены сервера
-function ServerHop()
-    if not Hunting then return end
-    
-    UpdateStatus("Finding new server...")
-    local PlaceID = game.PlaceId
-    local AllIDs = {}
-    local foundAnything = ""
-    local actualHour = os.date("!*t").hour
-    
-    -- Читаем историю серверов
-    local success, fileData = pcall(function()
-        return readfile("CarHunterServers.json")
-    end)
-    
-    if success and fileData then
-        AllIDs = HttpService:JSONDecode(fileData)
-    else
-        table.insert(AllIDs, tostring(actualHour))
-    end
-    
-    -- Функция для поиска нового сервера
-    local function FindNewServer()
-        local url = foundAnything == "" and 
-            "https://games.roblox.com/v1/games/"..PlaceID.."/servers/Public?sortOrder=Asc&limit=100" or
-            "https://games.roblox.com/v1/games/"..PlaceID.."/servers/Public?sortOrder=Asc&limit=100&cursor="..foundAnything
-        
-        local success, Site = pcall(function()
-            return HttpService:JSONDecode(game:HttpGet(url))
-        end)
-        
-        if not success then
-            UpdateStatus("Error getting server list")
-            return false
-        end
-        
-        if Site.nextPageCursor and Site.nextPageCursor ~= "null" then
-            foundAnything = Site.nextPageCursor
-        end
-        
-        for _, server in ipairs(Site.data) do
-            if not Hunting then break end
-            
-            local serverID = tostring(server.id)
-            local canJoin = true
-            
-            -- Проверяем, не были ли на этом сервере
-            for _, visitedID in ipairs(AllIDs) do
-                if serverID == tostring(visitedID) then
-                    canJoin = false
-                    break
-                end
-            end
-            
-            if canJoin and tonumber(server.playing) < tonumber(server.maxPlayers) then
-                table.insert(AllIDs, serverID)
-                
-                -- Сохраняем историю
-                pcall(function()
-                    writefile("CarHunterServers.json", HttpService:JSONEncode(AllIDs))
-                end)
-                
-                -- Телепортируемся
-                UpdateStatus("Joining server "..serverID:sub(1, 8).."...")
-                TeleportService:TeleportToPlaceInstance(PlaceID, serverID, localPlayer)
-                wait(5)
-                return true
-            end
-        end
-        return false
-    end
-    
-    if not FindNewServer() and foundAnything ~= "" then
-        FindNewServer()
-    end
-end
-
-function UpdateStatus(text)
-    local gui = game:GetService("CoreGui"):FindFirstChild("CarHunterGUI")
-    if gui and gui:FindFirstChild("MainFrame") then
-        local StatusLabel = gui.MainFrame.StatusLabel
-        StatusLabel.Text = text
-    end
-    print("CAR HUNTER: " .. text)
-end
-
--- Запускаем скрипт
-CreateGUI()
-UpdateStatus("Exact Path Hunter loaded! Enter car name")
-
-print("=== CAR HUNTER EXACT PATH ===")
-print("Path: Workspace.Map.PlayerBooths.PlayerBooth#.PlayerBooth.SignText.SurfaceGui.ScrollingFrame.ImageLabel.Title.TextLabel.Text")
+Rayfield:Notify({
+    Title = "СКРИПТ ЗАГРУЖЕН",
+    Content = "Нажми Rehop и наслаждайся, мудила",
+    Duration = 5,
+    Image = 4483362458
+})
