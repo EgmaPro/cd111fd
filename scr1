@@ -1,91 +1,145 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
 local Window = Rayfield:CreateWindow({
-    Name = "ОБХОД PERMISSION ERROR",
-    LoadingTitle = "Взламываем систему доступа...",
-    LoadingSubtitle = "by I.S.-1 - ебучие пермишены",
+    Name = "ЧИТ ДЛЯ ХУЕСОСОВ",
+    LoadingTitle = "Загрузка читов...",
+    LoadingSubtitle = "by I.S.-1",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "IS1 Cheats",
+        FileName = "Config.json"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "noinvitelol",
+        RememberJoins = true
+    }
 })
 
-local MainTab = Window:CreateTab("Фикс доступа", 4483362458)
-
-local FixBtn = MainTab:CreateButton({
-    Name = "ОБОЙТИ ОШИБКУ ДОСТУПА",
-    Callback = function()
-        -- Пытаемся телепортнуть друга через обходные пути
-        local success, error = pcall(function()
-            -- Способ 1: Прямой телепорт через ID места
-            local PlaceId = game.PlaceId
-            local JobId = game.JobId
-            
-            -- Создаем специальную ссылку для обхода пермишенов
-            local TeleportScript = [[
-                game:GetService("TeleportService"):TeleportToPlaceInstance(]]..PlaceId..[[, "]]..JobId..[[")
-            ]]
-            
-            setclipboard(TeleportScript)
-        end)
-        
-        if success then
-            Rayfield:Notify({
-                Title = "СКРИПТ ДЛЯ ДРУГА СКОПИРОВАН",
-                Content = "Друг должен вставить это в Executor",
-                Duration = 8,
-            })
-        else
-            Rayfield:Notify({
-                Title = "ОШИБКА",
-                Content = "Не удалось обойти: "..tostring(error),
-                Duration = 6,
-            })
-        end
-    end
-})
-
-local ForceJoinBtn = MainTab:CreateButton({
-    Name = "СИЛОЙ ЗАТАЩИТЬ ДРУГА НА СЕРВЕР",
-    Callback = function()
-        -- Более агрессивный метод
-        local Players = game:GetService("Players")
-        local HttpService = game:GetService("HttpService")
-        
-        local function ForceJoinFriend(friendName)
-            local friend = Players:FindFirstChild(friendName)
-            if friend then
-                local PlaceId = game.PlaceId
-                local JobId = game.JobId
-                
-                -- Пытаемся силой телепортнуть друга
-                local teleportSuccess = pcall(function()
-                    game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceId, JobId, friend)
-                end)
-                
-                return teleportSuccess
+Rayfield:Notify({
+    Title = "ЧИТ АКТИВИРОВАН",
+    Content = "Добро пожаловать в ад, уёбок",
+    Duration = 6.5,
+    Image = 4483362458,
+    Actions = {
+        Ignore = {
+            Name = "Похуй",
+            Callback = function()
             end
-            return false
+        }
+    }
+})
+
+local MainTab = Window:CreateTab("Основное", 4483362458)
+local RehopSection = MainTab:CreateSection("Rehop функция")
+
+local RehopButton = MainTab:CreateButton({
+    Name = "Rehop Server",
+    Callback = function()
+        Rayfield:Notify({
+            Title = "НАЧИНАЕМ РЕХОП",
+            Content = "Ищем новый сервер, еблан...",
+            Duration = 3,
+            Image = 4483362458
+        })
+        
+        -- ТВОЯ ФУНКЦИЯ РЕХОПА
+        local function StartRehop()
+            local PlaceID = game.PlaceId
+            local AllIDs = {}
+            local foundAnything = ""
+            local actualHour = os.date("!*t").hour
+            local Deleted = false
+            
+            local File = pcall(function()
+                AllIDs = game:GetService('HttpService'):JSONDecode(readfile("NotSameServers.json"))
+            end)
+            
+            if not File then
+                table.insert(AllIDs, actualHour)
+                writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+            end
+            
+            local function TPReturner()
+                local Site;
+                if foundAnything == "" then
+                    Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
+                else
+                    Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
+                end
+                
+                local ID = ""
+                if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
+                    foundAnything = Site.nextPageCursor
+                end
+                
+                local num = 0;
+                for i,v in pairs(Site.data) do
+                    local Possible = true
+                    ID = tostring(v.id)
+                    if tonumber(v.maxPlayers) > tonumber(v.playing) then
+                        for _,Existing in pairs(AllIDs) do
+                            if num ~= 0 then
+                                if ID == tostring(Existing) then
+                                    Possible = false
+                                end
+                            else
+                                if tonumber(actualHour) ~= tonumber(Existing) then
+                                    local delFile = pcall(function()
+                                        delfile("NotSameServers.json")
+                                        AllIDs = {}
+                                        table.insert(AllIDs, actualHour)
+                                    end)
+                                end
+                            end
+                            num = num + 1
+                        end
+                        
+                        if Possible == true then
+                            table.insert(AllIDs, ID)
+                            wait()
+                            pcall(function()
+                                writefile("NotSameServers.json", game:GetService('HttpService'):JSONEncode(AllIDs))
+                                wait()
+                                game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
+                            end)
+                            wait(4)
+                        end
+                    end
+                end
+            end
+            
+            local function Teleport()
+                while wait() do
+                    pcall(function()
+                        TPReturner()
+                        if foundAnything ~= "" then
+                            TPReturner()
+                        end
+                    end)
+                end
+            end
+            
+            Teleport()
         end
         
-        Rayfield:Notify({
-            Title = "ПЫТАЕМСЯ ЗАТАЩИТЬ ДРУГА",
-            Content = "Если не получится - он слишком тупой",
-            Duration = 5,
-        })
+        StartRehop()
     end
 })
 
--- АВАРИЙНЫЙ ВАРИАНТ
-local EmergencyBtn = MainTab:CreateButton({
-    Name = "ЭКСТРЕННЫЙ ВАРИАНТ (ЕСЛИ ВСЕ ПРОЕБАЛИ)",
-    Callback = function()
-        -- Просто даем прямую ссылку и пусть друг сам разбирается
-        local PlaceId = game.PlaceId
-        local JobId = game.JobId
-        local DirectLink = "https://www.roblox.com/games/"..PlaceId.."/?gameInstanceId="..JobId
-        
-        setclipboard(DirectLink)
-        Rayfield:Notify({
-            Title = "ПРЯМАЯ ССЫЛКА СКОПИРОВАНА",
-            Content = "Пусть друг переходит по этой ссылке: "..DirectLink,
-            Duration = 8,
-        })
+-- АВТОМАТИЧЕСКИЙ ПЕРЕЗАПУСК СКРИПТА ПОСЛЕ ТЕЛЕПОРТА
+game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(State)
+    if State == Enum.TeleportState.InProgress then
+        -- Сохраняем скрипт для авто-перезапуска
+        queue_on_teleport([[
+            wait(5)
+            loadstring(game:HttpGet('https://raw.githubusercontent.com/IS1-Cheats/Roblox/main/cheat.lua'))()
+        ]])
     end
+end)
+
+Rayfield:Notify({
+    Title = "СКРИПТ ЗАГРУЖЕН",
+    Content = "Нажми Rehop и наслаждайся, мудила",
+    Duration = 5,
+    Image = 4483362458
 })
